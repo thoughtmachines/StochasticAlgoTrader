@@ -4,7 +4,7 @@ import torch
 
 class hourly(object):
 
-    def __init__(self,currency,test = False,DEVICE = torch.device("cpu"),window=7,model=None):
+    def __init__(self,currency,DEVICE = torch.device("cpu"),window=7,model=None):
         data = pd.read_csv("data/data/"+currency+"Final.csv")
         window = 7
         data = data.drop(["Unnamed: 0",
@@ -16,7 +16,6 @@ class hourly(object):
                         "mediantransactionvalue-"+currency,
                         "Unnamed: 0_y"
                         ], axis=1)
-        self.test = test
 
         if currency == "btc":
             var = "bitcoin-price"
@@ -59,6 +58,7 @@ class hourly(object):
 
         raw = pd.read_csv("data/data/Coinbase_"+currency+"USD_1h.csv")
         raw = raw.drop(["Date"],axis=1).to_numpy()
+        raw = np.flip(raw,axis=0)
 
         hourly = []
         for i in range(844):

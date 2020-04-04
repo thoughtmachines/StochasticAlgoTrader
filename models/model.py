@@ -5,7 +5,7 @@ from torch.autograd import Variable
 
 class SeqRegressor(nn.Module):
 
-    def __init__(self,hidden_size=23,stochastic=False,coin=None,model=None):
+    def __init__(self,hidden_size=23,stochastic=True,coin=None,model=None):
         super(SeqRegressor,self).__init__()
         self.stochastic = stochastic
         self.hidden_size = hidden_size
@@ -83,7 +83,7 @@ class SeqRegressor(nn.Module):
 
 class MLPRegressor(nn.Module):
 
-    def __init__(self,stochastic=False,coin=None,model=None):
+    def __init__(self,stochastic=True,coin=None,model=None):
         super(MLPRegressor,self).__init__()
         self.stochastic = stochastic
         self.relu = nn.ReLU()
