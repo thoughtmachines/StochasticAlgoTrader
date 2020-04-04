@@ -26,9 +26,9 @@ class cryptoData(object):
         else:
             var = "litecoin-price"
 
-        data = data.iloc[:901]
-        train_data = data.iloc[50:700]
-        test_data = data.iloc[700:]
+        data = data.iloc[:851]
+        train_data = data.iloc[:650]
+        test_data = data.iloc[650:]
 
         price = np.asarray(data[var])
         mean = train_data.mean()
@@ -39,8 +39,8 @@ class cryptoData(object):
         train_data = torch.Tensor(train_data.to_numpy())
         test_data = torch.Tensor(test_data.to_numpy())
 
-        train_data[:,5] = torch.Tensor(price[50:700])
-        test_data[:,5] = torch.Tensor(price[700:])
+        train_data[:,5] = torch.Tensor(price[:650])
+        test_data[:,5] = torch.Tensor(price[650:])
 
         xtrain = []
         ytrain = []
