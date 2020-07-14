@@ -9,7 +9,7 @@ from data.trader import hourly
 from models.model import SeqRegressor, MLPRegressor
 
 DEVICE = torch.device("cpu")
-COIN = "eth"
+COIN = "ltc"
 MODEL = "norm"
 
 if __name__ == "__main__":
@@ -27,6 +27,8 @@ if __name__ == "__main__":
     transactions = 0
     state = "CASH"
     for i,(x,hourly,target) in enumerate(dataloader):
+        if i <= DAYS/2:
+            continue
         if i == DAYS:
             break
 
@@ -45,13 +47,13 @@ if __name__ == "__main__":
                     state = "CRYPTO"
                     transactions+=1
                     buy = _close
+                    print(i,hour,coin*_close,"\t",_close)
             if state == "CRYPTO" :
                 if  out < _close:
                     cash = _close*coin
                     coin = 0
                     state = "CASH"
                     transactions+=1
+                    print(i,hour,cash,"\t",_close)
 
     print("Cash:",cash,"\nCoin:",coin*_close,"\nTransactions:",transactions,"\nPrice:",_close)
-
-    
