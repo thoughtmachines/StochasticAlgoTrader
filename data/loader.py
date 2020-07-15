@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import torch
+from copy import deepcopy
 
 
 class cryptoData(object):
@@ -29,18 +30,24 @@ class cryptoData(object):
         data = data.iloc[:851]
         train_data = data.iloc[:650]
         test_data = data.iloc[650:]
+        self.raw = data
 
         price = np.asarray(data[var])
         mean = train_data.mean()
+        self.raw_prices = deepcopy(price)
 
         train_data = train_data/mean
         test_data = test_data/mean
+        self.raw = self.raw/mean
         
         train_data = torch.Tensor(train_data.to_numpy())
         test_data = torch.Tensor(test_data.to_numpy())
+        self.raw = torch.Tensor(self.raw.to_numpy())
 
         train_data[:,5] = torch.Tensor(price[:650])
         test_data[:,5] = torch.Tensor(price[650:])
+        self.raw[:,5] = torch.Tensor(self.raw_prices[:])
+        self.raw_prices = torch.Tensor(self.raw_prices)
 
         xtrain = []
         ytrain = []
@@ -70,6 +77,7 @@ class cryptoData(object):
         self.ytrain = self.ytrain/self.pmax
         self.xtest[:,:,5] = self.xtest[:,:,5]/self.pmax
         self.ytest = self.ytest/self.pmax
+        self.raw /= self.pmax
 
     def __getitem__(self,key):
         if not self.test:
@@ -85,3 +93,7 @@ class cryptoData(object):
         if self.test:
             return 230-self.window
         return 650-self.window
+
+    def getDataFrame(self,maxRange):
+        prices = self.raw_prices[:maxRange]
+        return prices.view(-1,1),torch.mean(prices),torch.std(prices)
