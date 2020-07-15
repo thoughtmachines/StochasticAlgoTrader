@@ -94,6 +94,6 @@ class cryptoData(object):
             return 230-self.window
         return 650-self.window
 
-    def getDataFrame(self,maxRange):
-        prices = self.raw_prices[:maxRange]
-        return prices.view(-1,1),torch.mean(prices),torch.std(prices)
+    def getDataFrame(self,maxRange,period):
+        prices = self.raw_prices[maxRange-period:maxRange]
+        return prices.view(-1,1)

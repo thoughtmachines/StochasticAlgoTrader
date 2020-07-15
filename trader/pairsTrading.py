@@ -12,50 +12,47 @@ from data.loader import cryptoData
 from models.model import  MLPRegressor
 
 DEVICE = torch.device("cpu")
-COIN1 = "btc"
-COIN2 = "eth"
+COIN1 = "ltc"
+COIN2 = "btc"
 MODEL = "norm"
 
-class Regressor(nn.Module):
-
-    def __init__(self):
-        super(Regressor,self).__init__()
-        self.layer = nn.Linear(1,1)
-
-    def forward(self,x):
-        return self.layer(x)
-
-class RegressorTrainer(object):
+class Residual(object):
 
     def __init__(self,dataloader_coin1,dataloader_coin2):
         self.dataloader_coin1 = dataloader_coin1
         self.dataloader_coin2 = dataloader_coin2
-        self.model = Regressor()
-        self.optimizer = Adam(self.model.parameters(), lr=0.01)
-        self.lossfn = nn.MSELoss(reduction='mean')
 
-    def train(self,index):
-        iters = 200
-        y,yMean,yStd = self.dataloader_coin1.getDataFrame(index)
-        x,xMean,xStd = self.dataloader_coin2.getDataFrame(index)
-        x = (x - xMean)/xStd
-        y = (y - yMean)/yStd
-        self.xMean = xMean
-        self.yMean = yMean
-        self.xStd = xStd
-        self.yStd = yStd
-        for i in range(iters):
-            self.optimizer.zero_grad()
-            out = self.model(x)
-            loss = self.lossfn(out,y)
-            loss.backward()
-            self.optimizer.step()
-            # if i == 0 or i == iters-1:
-            #     print("\tIter: ",i," Loss: ",loss.item())
+    def zScore(self,upperIndex,out_coin1,out_coin2):
+        coin1_30 = self.dataloader_coin1.getDataFrame(upperIndex,20)
+        coin2_30 = self.dataloader_coin2.getDataFrame(upperIndex,20)
+        coin1_30 = torch.cat((coin1_30,out_coin1))
+        coin2_30 = torch.cat((coin2_30,out_coin2))
+        
+        meanDiffernce30 = torch.mean(coin1_30-coin2_30)
+        standardDev30 = torch.std(coin1_30-coin2_30)
 
-    def residues(self,value,x):
-        return (x-self.xMean)/self.xStd - self.model((value-self.yMean)/self.yStd)
+        coin1_5 = self.dataloader_coin1.getDataFrame(upperIndex,5)
+        coin2_5 = self.dataloader_coin2.getDataFrame(upperIndex,5)
+        coin1_5 = torch.cat((coin1_5,out_coin1))
+        coin2_5 = torch.cat((coin2_5,out_coin2))
 
+        meanDiffernce5 = torch.mean(coin1_5-coin2_5)
+
+        if standardDev30 > 0:
+            return (meanDiffernce5 - meanDiffernce30)/standardDev30, self.riskModel(coin1_30,coin2_30)
+        else:
+            return 0, self.riskModel(coin1_30,coin2_30)
+
+    def riskModel(self,coin1_30,coin2_30):
+        c1 = coin1_30 - coin1_30.mean()
+        c2 = coin2_30 - coin2_30.mean()
+
+        corr = torch.sum(c1*c2) / (torch.sqrt(torch.sum(c1 ** 2)) * torch.sqrt(torch.sum(c2 ** 2)))
+        if corr > 0.9:
+            risk = False
+        else:
+            risk = True
+        return risk
 
 if __name__ == "__main__":
     
@@ -72,33 +69,50 @@ if __name__ == "__main__":
     model_coin1.eval(dataloader_coin1[0][0])
     model_coin2.eval(dataloader_coin2[0][0])
 
-    residualModel = RegressorTrainer(dataloader_coin1,dataloader_coin2)
+    residualModel = Residual(dataloader_coin1,dataloader_coin2)
 
-    counter = 0
-    runningAverageHolder = 0
+    coin1_amt = 0
+    coin2_amt = 0
+
+    startDay = 20
     shorts = longs = holds = 0
-    for i in range(200,min(DAYS_coin1,DAYS_coin2)):
-        counter+=1
+    for i in range(startDay,min(DAYS_coin1,DAYS_coin2)):
 
         x_coin1,target_coin1 = dataloader_coin1[i]
         x_coin2,target_coin2 = dataloader_coin2[i]
+        price_coin1 = dataloader_coin1.getDataFrame(i,1)
+        price_coin2 = dataloader_coin2.getDataFrame(i,1)
+
+        if i == startDay:
+            coin1_amt = 50/ price_coin1
+            coin2_amt = 50/ price_coin2
+            simple_hold1 = 50/ price_coin1
+            simple_hold2 = 50/ price_coin2
 
         out_coin1 = model_coin1(x_coin1) 
         out_coin2 = model_coin2(x_coin2) 
         
-        residualModel.train(i)
-        residuals = residualModel.residues(out_coin2,out_coin1)
-        runningAverageHolder += residuals
+        zScore, risk = residualModel.zScore(i,out_coin1,out_coin2)
 
-        adjustedZScore = (residuals.item()*counter)/runningAverageHolder.item()
-
-        if adjustedZScore > 1.25:
-            shorts+=1
-        elif adjustedZScore < 0.75:
-            longs+=1
-        else:
-            holds+=1
-        print(counter,"\t",adjustedZScore,shorts,longs,holds)
+        if not risk:
+            if zScore > 1:
+                shorts+=1
+                if coin1_amt > 0:
+                    temp = (coin1_amt/2) * price_coin1
+                    coin1_amt = coin1_amt/2
+                    coin2_amt += (temp / price_coin2)
+                    print("\t",i,"Transaction: short at ",price_coin1.item(),price_coin2.item())
+            elif zScore < -1:
+                longs+=1
+                if coin2_amt > 0:
+                    temp = (coin2_amt/2) * price_coin2
+                    coin2_amt = coin2_amt/2
+                    coin1_amt += (temp / price_coin1)
+                    print("\t",i,"Transaction: long at ",price_coin1.item(),price_coin2.item())
+            else:
+                holds+=1
+        
+        print(i,(coin1_amt * price_coin1) + (coin2_amt * price_coin2),(simple_hold1 * price_coin1) + (simple_hold2 * price_coin2))
 
         out_coin1 = out_coin1.item()*dataloader_coin1.pmax.item()
         out_coin2 = out_coin2.item()*dataloader_coin2.pmax.item()
