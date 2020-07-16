@@ -12,7 +12,7 @@ from data.loader import cryptoData
 from models.model import  MLPRegressor
 
 DEVICE = torch.device("cpu")
-COIN1 = "ltc"
+COIN1 = "eth"
 COIN2 = "btc"
 MODEL = "norm"
 
@@ -54,6 +54,11 @@ class Residual(object):
             risk = True
         return risk
 
+def getGeneralTrends(dataloader,upperIndex):
+    upper = dataloader.getDataFrame(upperIndex,10).mean()
+    lower = dataloader.getDataFrame(upperIndex,30).mean()
+    return upper/lower
+
 if __name__ == "__main__":
     
     model_coin1 = MLPRegressor(coin=COIN1,model= MODEL)
@@ -73,8 +78,10 @@ if __name__ == "__main__":
 
     coin1_amt = 0
     coin2_amt = 0
+    cash = 0
 
-    startDay = 20
+    startDay = 30
+    trendThreshold = 1.4
     shorts = longs = holds = 0
     for i in range(startDay,min(DAYS_coin1,DAYS_coin2)):
 
@@ -86,13 +93,13 @@ if __name__ == "__main__":
         if i == startDay:
             coin1_amt = 50/ price_coin1
             coin2_amt = 50/ price_coin2
-            simple_hold1 = 50/ price_coin1
-            simple_hold2 = 50/ price_coin2
 
         out_coin1 = model_coin1(x_coin1) 
         out_coin2 = model_coin2(x_coin2) 
         
         zScore, risk = residualModel.zScore(i,out_coin1,out_coin2)
+        trend_coin1 = getGeneralTrends(dataloader_coin1,i)
+        trend_coin2 = getGeneralTrends(dataloader_coin2,i)
 
         if not risk:
             if zScore > 1:
@@ -100,19 +107,30 @@ if __name__ == "__main__":
                 if coin1_amt > 0:
                     temp = (coin1_amt/2) * price_coin1
                     coin1_amt = coin1_amt/2
-                    coin2_amt += (temp / price_coin2)
+                    if trend_coin2 > trendThreshold:
+                        coin2_amt += (temp / price_coin2)
+                        cash/=2
+                        coin2_amt += (cash / price_coin2)
+                    else:
+                        cash+= temp
                     print("\t",i,"Transaction: short at ",price_coin1.item(),price_coin2.item())
             elif zScore < -1:
                 longs+=1
                 if coin2_amt > 0:
                     temp = (coin2_amt/2) * price_coin2
                     coin2_amt = coin2_amt/2
-                    coin1_amt += (temp / price_coin1)
+                    if trend_coin1 > trendThreshold:
+                        coin1_amt += (temp / price_coin1)
+                        cash/=2
+                        coin2_amt += (cash / price_coin1)
+                    else:
+                        cash+= temp
                     print("\t",i,"Transaction: long at ",price_coin1.item(),price_coin2.item())
             else:
                 holds+=1
+
         
-        print(i,(coin1_amt * price_coin1) + (coin2_amt * price_coin2),(simple_hold1 * price_coin1) + (simple_hold2 * price_coin2))
+        print(i,(coin1_amt * price_coin1) + (coin2_amt * price_coin2) + cash)
 
         out_coin1 = out_coin1.item()*dataloader_coin1.pmax.item()
         out_coin2 = out_coin2.item()*dataloader_coin2.pmax.item()
