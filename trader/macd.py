@@ -5,14 +5,14 @@ sys.path.insert(0, myPath + '/../')
 import torch
 import  matplotlib.pyplot as plt
 import numpy as np
-from data.data_loader import daily_data
+from data.loader import cryptoData
 
 DEVICE = torch.device("cpu")
 
 # Function for MACD Strategy
 
 def macd(coin_name, amount):
-    dataloader = daily_data(coin_name.lower(), DEVICE=DEVICE)
+    dataloaderX = cryptoData(coin_name.lower(),DEVICE=DEVICE)
     
     macd_line = []
     signal_line = []
@@ -22,7 +22,8 @@ def macd(coin_name, amount):
     no_of_coins = 0
     print("\n",coin_name.upper(),":")
     
-    for i,(macd, macd_9, ema_12, ema_26, price) in enumerate(dataloader):
+    for i in range(816): # TODO: Discuss standard time slot across all algorithms
+        (macd, macd_9, ema_12, ema_26, price) = dataloaderX.getMacDData(i)
 
         x.append(i)
         macd_line.append(macd)

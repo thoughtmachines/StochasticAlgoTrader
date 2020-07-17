@@ -48,6 +48,7 @@ class cryptoData(object):
         test_data[:,5] = torch.Tensor(price[650:])
         self.raw[:,5] = torch.Tensor(self.raw_prices[:])
         self.raw_prices = torch.Tensor(self.raw_prices)
+        self.emaPreparation(deepcopy(self.raw_prices))
 
         xtrain = []
         ytrain = []
@@ -78,6 +79,59 @@ class cryptoData(object):
         self.xtest[:,:,5] = self.xtest[:,:,5]/self.pmax
         self.ytest = self.ytest/self.pmax
         self.raw /= self.pmax
+
+    def emaPreparation(self,price):
+        sma_12 = 0
+        sma_26 = 0
+
+        for i in range(12):
+            sma_12 += price[i]
+
+        sma_12 = sma_12/12
+
+        for i in range(26):
+            sma_26 += price[i]
+
+        sma_26 = sma_26/26        
+
+        self.ema_12 = sma_12
+        self.ema_26 = sma_26
+        self.multiplier_12 = 2/13
+        self.multiplier_26 = 2/27
+        self.multiplier_9 = 2/10
+
+        for i in range(12,25):
+            self.ema_12 = self.ema_12 + (price[i] - self.ema_12)*self.multiplier_12
+
+        self.macd = 0
+        self.macd_9 = 0
+
+        for i in range(25,34):
+            self.ema_12 = self.ema_12 + (price[i] - self.ema_12)*self.multiplier_12
+            if i == 25:
+                self.ema_26 = sma_26
+            else:
+                 self.ema_26 = self.ema_26 + (price[i] - self.ema_26)*self.multiplier_26
+
+            self.macd = self.ema_12 - self.ema_26
+            self.macd_9 += self.macd
+        
+        self.macd_9 = self.macd_9/9
+
+        self.final_price = price[34:]
+
+    # 11 - sma_12
+    # 25 - sma_26/macd
+    # 33 - macd_9
+    # Start returning from 34 day (macd and macd_9)
+
+    def getMacDData(self, key):
+        self.ema_12 = self.ema_12 + (self.final_price[key] - self.ema_12)*self.multiplier_12
+        self.ema_26 = self.ema_26 + (self.final_price[key] - self.ema_26)*self.multiplier_26
+        self.macd = self.ema_12 - self.ema_26
+        self.macd_9 = self.macd_9 + (self.macd - self.macd_9)*self.multiplier_9
+
+        return self.macd, self.macd_9, self.ema_12, self.ema_26, self.final_price[key]
 
     def __getitem__(self,key):
         if not self.test:
