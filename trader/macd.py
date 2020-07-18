@@ -21,7 +21,7 @@ def macd(coin_name, amount):
 
     dataloaderX = cryptoData(coin_name.lower(),DEVICE=DEVICE)
     DAYS = len(dataloaderX)
-    model.eval(dataloaderX[0][0])
+    model.eval(dataloaderX[33][0])
 
     macd_line = []
     signal_line = []

@@ -133,6 +133,13 @@ class cryptoData(object):
 
         return self.macd, self.macd_9, self.ema_12, self.ema_26, self.final_price[key]
 
+    def getAOData(self,key):
+        
+        sma_5 = (self.raw_prices[key-5] + self.raw_prices[key])/2
+        sma_34 = (self.raw_prices[key-34] + self.raw_prices[key])/2
+        AO= sma_5 - sma_34
+        return sma_5,sma_34,AO, self.raw_prices[key], (self.raw_prices[key-4],self.raw_prices[key-33])
+
     def __getitem__(self,key):
         if not self.test:
             seven_day_data = self.xtrain[key]
