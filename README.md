@@ -1,1 +1,1 @@
-# StochasticAlgoTrader
+# Stochastic AlgoTrader
