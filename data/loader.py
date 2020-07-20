@@ -140,6 +140,20 @@ class cryptoData(object):
         AO= sma_5 - sma_34
         return sma_5,sma_34,AO, self.raw_prices[key], (self.raw_prices[key-4],self.raw_prices[key-33])
 
+    def getBollBandData(self,key):
+        if key < 29:
+            return 0,0,0,0,0,0
+
+        sma_20 = self.raw_prices[key-19:key+1].sum()/20
+        sma_30 = self.raw_prices[key-29:key+1].sum()/30
+        sma_5 = self.raw_prices[key-4:key+1].sum()/5
+
+        dataRange = self.raw_prices[key-19:key+1]
+        upper_boll_band = sma_20 + 2*abs(torch.std(dataRange))
+        lower_boll_band = sma_20 - 2*abs(torch.std(dataRange))
+
+        return sma_20, sma_30, sma_5, upper_boll_band, lower_boll_band, self.raw_prices[key]
+    
     def __getitem__(self,key):
         if not self.test:
             seven_day_data = self.xtrain[key]

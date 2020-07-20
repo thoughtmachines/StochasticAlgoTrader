@@ -5,7 +5,7 @@ sys.path.insert(0, myPath + '/../')
 import torch
 import  matplotlib.pyplot as plt
 import numpy as np
-from data.bb_data_loader import daily_data
+from data.loader import cryptoData
 
 DEVICE = torch.device("cpu")
 
@@ -13,7 +13,7 @@ DEVICE = torch.device("cpu")
 def boll_band(coin, amount):
 
     print("\n",coin.upper(),":")
-    dataloader = daily_data(coin, DEVICE=DEVICE)
+    dataloader = cryptoData(coin, DEVICE=DEVICE)
     start = amount
     cash = amount
     no_of_coins = 0
@@ -23,11 +23,11 @@ def boll_band(coin, amount):
     lb = []
     x = []
 
-    for i,(sma_20,sma_30,sma_5,ubb,lbb,price) in enumerate(dataloader):
+    for i in range(len(dataloader)):
         # Wait for the Moving Average
         if(i < 29):
             continue
-        
+        (sma_20,sma_30,sma_5,ubb,lbb,price) = dataloader.getBollBandData(i)
 
         trend = sma_5-sma_30
         x.append(i)
