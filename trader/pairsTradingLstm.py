@@ -9,7 +9,7 @@ from torch.nn.init import xavier_normal as xavier
 import  matplotlib.pyplot as plt
 
 from data.loader import cryptoData
-from models.model import  MLPRegressor
+from models.model import  SeqRegressor
 
 DEVICE = torch.device("cpu")
 COIN1 = "eth"
@@ -60,9 +60,9 @@ def getGeneralTrends(dataloader,upperIndex):
     return upper/lower
 
 def main(COIN1,COIN2):
-    model_coin1 = MLPRegressor(coin=COIN1,model= MODEL)
+    model_coin1 = SeqRegressor(coin=COIN1,model= MODEL)
     model_coin1.to(DEVICE)
-    model_coin2 = MLPRegressor(coin=COIN2,model= MODEL)
+    model_coin2 = SeqRegressor(coin=COIN2,model= MODEL)
     model_coin2.to(DEVICE)
 
     dataloader_coin1 = cryptoData(COIN1,DEVICE=DEVICE,model=MODEL)
@@ -70,8 +70,8 @@ def main(COIN1,COIN2):
     dataloader_coin2 = cryptoData(COIN2,DEVICE=DEVICE,model=MODEL)
     DAYS_coin2 = len(dataloader_coin2)
 
-    model_coin1.eval(dataloader_coin1[0][0])
-    model_coin2.eval(dataloader_coin2[0][0])
+    model_coin1.eval(dataloader_coin1[0][0].unsqueeze(1))
+    model_coin2.eval(dataloader_coin2[0][0].unsqueeze(1))
 
     residualModel = Residual(dataloader_coin1,dataloader_coin2)
 
@@ -93,8 +93,10 @@ def main(COIN1,COIN2):
             coin1_amt = 5000/ price_coin1
             coin2_amt = 5000/ price_coin2
 
-        out_coin1 = model_coin1(x_coin1) 
-        out_coin2 = model_coin2(x_coin2) 
+        x_coin1 = x_coin1.unsqueeze(1)
+        x_coin2 = x_coin2.unsqueeze(1)
+        out_coin1 = model_coin1(x_coin1).view(1,1)
+        out_coin2 = model_coin2(x_coin2).view(1,1)
         
         zScore, risk = residualModel.zScore(i,out_coin1,out_coin2)
         trend_coin1 = getGeneralTrends(dataloader_coin1,i)
