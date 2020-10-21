@@ -80,7 +80,7 @@ def main(COIN1,COIN2):
     cash = 0
 
     startDay = 30
-    trendThreshold = 1.4
+    trendThreshold = 1
     shorts = longs = holds = 0
     for i in range(startDay,min(DAYS_coin1,DAYS_coin2)):
 
@@ -103,30 +103,21 @@ def main(COIN1,COIN2):
         if not risk:
             if zScore > 1:
                 shorts+=1
-                if coin1_amt > 0:
-                    temp = (coin1_amt/2) * price_coin1
-                    coin1_amt = coin1_amt/2
-                    if trend_coin2 > trendThreshold:
-                        coin2_amt += (temp / price_coin2)
-                        cash/=2
-                        coin2_amt += (cash / price_coin2)
-                    else:
-                        cash+= temp
-                    # print("\t",i,"Transaction: short at ",price_coin1.item(),price_coin2.item())
+                if trend_coin2 > trendThreshold:
+                    temp = coin1_amt* price_coin1
+                    coin1_amt = 0
+                    coin2_amt += (temp / price_coin2)
+                # print("\t",i,"Transaction: short at ",price_coin1.item(),price_coin2.item())
             elif zScore < -1:
                 longs+=1
-                if coin2_amt > 0:
-                    temp = (coin2_amt/2) * price_coin2
-                    coin2_amt = coin2_amt/2
-                    if trend_coin1 > trendThreshold:
-                        coin1_amt += (temp / price_coin1)
-                        cash/=2
-                        coin2_amt += (cash / price_coin1)
-                    else:
-                        cash+= temp
-                    # print("\t",i,"Transaction: long at ",price_coin1.item(),price_coin2.item())
+                if trend_coin1 > trendThreshold:
+                    temp = coin2_amt* price_coin2
+                    coin2_amt = 0
+                    coin1_amt += (temp / price_coin1)
+                # print("\t",i,"Transaction: long at ",price_coin1.item(),price_coin2.item())
             else:
                 holds+=1
+
 
         
         

@@ -7,7 +7,7 @@ import  matplotlib.pyplot as plt
 import numpy as np
 
 from data.loader import cryptoData
-from models.model import  MLPRegressor
+from models.model import  SeqRegressor
 
 DEVICE = torch.device("cpu")
 MODEL = "norm"
@@ -16,12 +16,12 @@ MODEL = "norm"
 
 def macd(coin_name, amount):
 
-    model = MLPRegressor(coin=coin_name.lower(),model= MODEL)
+    model = SeqRegressor(coin=coin_name.lower(),model= MODEL)
     model.to(DEVICE)
 
     dataloaderX = cryptoData(coin_name.lower(),DEVICE=DEVICE)
     DAYS = len(dataloaderX)
-    model.eval(dataloaderX[33][0])
+    model.eval(dataloaderX[33][0].unsqueeze(1))
 
     sma5_line = []
     sma34_line = []
@@ -32,12 +32,12 @@ def macd(coin_name, amount):
     print("\n",coin_name.upper(),":")
     
     for i,(x_input,target) in enumerate(dataloaderX): # TODO: Discuss standard time slot across all algorithms
-        if i < 330: # let dataloader catchup with macd range
+        if i < 34: # let dataloader catchup with macd range
             continue
         if i == DAYS:
             break
     
-        predictedPrice = model(x_input) * dataloaderX.pmax
+        predictedPrice = model(x_input.unsqueeze(1)) * dataloaderX.pmax
 
         sma_5,sma_34,AO,price,(new_sma5_lower,new_sma34_lower) = dataloaderX.getAOData(i)
         sma5_line.append(sma_5)
@@ -57,7 +57,6 @@ def macd(coin_name, amount):
         if AO <= 0 and no_of_coins != 0:
             amount = no_of_coins*price
             no_of_coins = 0
-        # print(predicted_sma5.item())
 
     if amount == 0:
         amount = no_of_coins*price
@@ -79,8 +78,8 @@ def macd(coin_name, amount):
 
 cash = 10000
 
-coins = ['ltc','eth','btc']
+coins = ['btc','eth','ltc']
 
 for coin in coins:
-    
     macd(coin, cash)
+    
