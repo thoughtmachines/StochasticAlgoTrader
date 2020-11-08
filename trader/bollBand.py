@@ -28,11 +28,18 @@ def boll_band(coin, amount):
     lb = []
     x = []
 
+    buyAndHold = 10000
+    first = False
+    time = 0
     for i,(x_input,target) in enumerate(dataloader): # TODO: Discuss standard time slot across all algorithms
         # Wait for the Moving Average
-        if(i < 400):
+        if(i < 34):
             continue
         (sma_20,sma_30,sma_5,ubb,lbb,price) = dataloader.getBollBandData(i)
+
+        if not first:
+            first = True
+            buyAndHold = buyAndHold/ target
 
         trend = sma_5-sma_30
         x.append(i)
@@ -55,13 +62,14 @@ def boll_band(coin, amount):
                 # print("Sell\n")
                 cash = no_of_coins*price
                 no_of_coins = 0
+        time+=1
 
     if no_of_coins != 0:
         cash = no_of_coins*price
         no_of_coins = 0
 
     print("\nStart: ", start, " End: ", cash)
-
+    print(buyAndHold * target, time)
     # Plotting the Moving Average and Bollinger Bands
     # x = np.asarray(x)
     # ub = np.asarray(ub)

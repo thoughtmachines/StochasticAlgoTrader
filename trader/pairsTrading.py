@@ -79,11 +79,12 @@ def main(COIN1,COIN2):
     coin2_amt = 0
     cash = 0
 
-    startDay = 30
+    startDay = 34
     trendThreshold = 1
     shorts = longs = holds = 0
+    time = 0
     for i in range(startDay,min(DAYS_coin1,DAYS_coin2)):
-
+        time+=1
         x_coin1,target_coin1 = dataloader_coin1[i]
         x_coin2,target_coin2 = dataloader_coin2[i]
         price_coin1 = dataloader_coin1.getDataFrame(i,1)
@@ -125,7 +126,8 @@ def main(COIN1,COIN2):
         out_coin1 = out_coin1.item()*dataloader_coin1.pmax.item()
         out_coin2 = out_coin2.item()*dataloader_coin2.pmax.item()
     print(COIN1,COIN2,"\n\t",(coin1_amt * price_coin1) + (coin2_amt * price_coin2) + cash)
-    print('\n')
+    print(time,'\n')
+    
 if __name__ == "__main__":
     
     main("eth","btc")    

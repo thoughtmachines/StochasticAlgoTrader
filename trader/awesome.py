@@ -30,12 +30,19 @@ def macd(coin_name, amount):
     start_amount = amount
     no_of_coins = 0
     print("\n",coin_name.upper(),":")
-    
+
+    buyAndHold = 10000
+    first = False
+    time = 0
     for i,(x_input,target) in enumerate(dataloaderX): # TODO: Discuss standard time slot across all algorithms
-        if i < 330: # let dataloader catchup with macd range
+        if i < 34: # let dataloader catchup with macd range
             continue
         if i == DAYS:
             break
+
+        if not first:
+            first = True
+            buyAndHold = buyAndHold/ target
     
         predictedPrice = model(x_input) * dataloaderX.pmax
 
@@ -58,12 +65,13 @@ def macd(coin_name, amount):
             amount = no_of_coins*price
             no_of_coins = 0
         # print(predicted_sma5.item())
+        time+=1
 
     if amount == 0:
         amount = no_of_coins*price
 
     print("\nStart: ",start_amount," End: ",amount)
-
+    print(buyAndHold * target, time)
     sma5_line = np.asarray(sma5_line)
     sma34_line = np.asarray(sma34_line)
     ao_line = np.asarray(ao_line)

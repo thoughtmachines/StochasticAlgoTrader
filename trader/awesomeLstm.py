@@ -14,7 +14,7 @@ MODEL = "norm"
 
 # Function for MACD Strategy
 
-def macd(coin_name, amount):
+def awesomeLSTM(coin_name, amount):
 
     model = SeqRegressor(coin=coin_name.lower(),model= MODEL)
     model.to(DEVICE)
@@ -81,5 +81,5 @@ cash = 10000
 coins = ['btc','eth','ltc']
 
 for coin in coins:
-    macd(coin, cash)
+    awesomeLSTM(coin, cash)
     

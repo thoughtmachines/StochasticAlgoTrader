@@ -30,7 +30,7 @@ def boll_band(coin, amount):
 
     for i,(x_input,target) in enumerate(dataloader): # TODO: Discuss standard time slot across all algorithms
         # Wait for the Moving Average
-        if(i < 400):
+        if(i < 34):
             continue
         (sma_20,sma_30,sma_5,ubb,lbb,price) = dataloader.getBollBandData(i)
 
