@@ -140,6 +140,14 @@ class cryptoData(object):
         AO= sma_5 - sma_34
         return sma_5,sma_34,AO, self.raw_prices[key], (self.raw_prices[key-4],self.raw_prices[key-33])
 
+    def getRSIData(self, key, n):
+
+        diff =  self.raw_prices[key-n:key] - self.raw_prices[key-n-1:key-1]
+        up = diff[diff > 0]
+        down = (- diff[diff < 0])
+        return (100 - (100/(1 + (up.mean()/down.mean())))).item(), self.final_price[key]
+        
+
     def getBollBandData(self,key):
         if key < 29:
             return 0,0,0,0,0,0
